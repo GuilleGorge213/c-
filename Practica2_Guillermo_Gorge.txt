@@ -1,0 +1,125 @@
+Ejercicio 1:
+#include <iostream>
+#include <thread>   
+#include <chrono>   
+#include <mutex>    
+
+using namespace std;
+
+void calcularFactorial(int num) {
+    std::mutex mtx;
+    long resultado = 1;
+
+    for (int i = 1; i <= num; ++i) {
+        resultado *= i;
+    }
+
+    std::lock_guard<std::mutex> guard(mtx);
+    std::cout << "Hilo " << std::this_thread::get_id() 
+              << " - El factorial de " << num << " es: " << resultado << std::endl;
+}
+
+int main() {
+    int num1, num2;
+
+    std::cout << "Primer número a calcular: ";
+    std::cin >> num1;
+    std::cout << "Segundo número a calcular: ";
+    std::cin >> num2;
+
+    std::thread hilo1(calcularFactorial, num1);
+    std::thread hilo2(calcularFactorial, num2);
+
+    hilo1.join(); 
+    hilo2.join(); 
+    
+    return 0;
+}
+
+
+Ejercicio 2:
+#include <iostream>
+#include <thread>
+#include <chrono>
+#include <mutex>
+#include <fstream>
+
+std::mutex mtx;
+
+void contadorDePalabras(char character) {
+	char caracter;
+	int contador = 0;
+	std::ifstream archivo("caracteres.txt");
+	while (archivo.get(caracter)) {
+		if (caracter == character) {
+			contador++;
+		}
+	}
+	archivo.close();
+	std::lock_guard<std::mutex> guard(mtx);
+	std::cout << "El caracter: "<< character << " aparece: "<<contador << " veces en el fichero" << std::endl;
+}
+
+
+int main() {
+
+	char caracter1, caracter2;
+
+	std::cout << "Primer caracter a contar: ";
+	std::cin >> caracter1;
+	std::cout << "Segundo caracter a contar: ";
+	std::cin >> caracter2;
+
+	std::thread hilo1(contadorDePalabras, caracter1);
+	std::thread hilo2(contadorDePalabras, caracter2);
+	
+	hilo1.join();
+	hilo2.join();
+
+	return 0;
+}
+
+Ejercicio 3:
+
+#include <iostream>
+#include <thread>
+#include <chrono>
+#include <mutex>
+#include <fstream>
+
+using namespace std;
+std::mutex mtx;
+
+void operarConCuenta(string operacion, int& saldo) {
+	std::lock_guard<std::mutex> guard(mtx);
+	if(operacion == "meter") {
+		saldo += 1000;
+		std::cout << "Ingresados 1000€, correctamente" << std::endl;
+	} else {
+		saldo -= 500;
+		std::cout << "Retirados 500€, correctamente" << std::endl;
+	}
+	std::this_thread::sleep_for(std::chrono::seconds(2));
+}
+
+void mostrarDinero(int& saldoCuenta) {
+	while(true){
+	std::this_thread::sleep_for(std::chrono::seconds(1));
+	std::lock_guard<std::mutex> guard(mtx);
+	std::cout << "Saldo: " << saldoCuenta << "€"<< std::endl;
+    }
+
+}
+
+int main() {
+	int saldoCuenta = 10000;
+	std::thread hilo3(mostrarDinero,std::ref(saldoCuenta));
+	for(int i = 0; i<5; ++i) {
+        std::thread hilo1(operarConCuenta, "sacar", std::ref(saldoCuenta));
+        std::thread hilo2(operarConCuenta, "meter", std::ref(saldoCuenta));
+		hilo1.join();
+		hilo2.join();
+	}
+	
+	return 0;
+}
